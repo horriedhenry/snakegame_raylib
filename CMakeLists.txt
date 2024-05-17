@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD 11)
 # Find Raylib package
 find_package(raylib 4.5 REQUIRED)
 
+add_compile_options(-Wall -Wextra -pedantic)
+
 add_executable(Snake src/main.cpp)
 
 target_link_libraries(Snake PRIVATE raylib)
