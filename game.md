@@ -4,9 +4,10 @@
 - [x] Create Food
 - [x] Create Snake
 - [x] Moving the Snake
-- [ ] Make the Snake move in 4 directions properly
-- [ ] Making the Snake eat the Food
-- [ ] Making the Snake grow longer when it collides with Food
-- [ ] Check for collision with edges and tail
+- [x] Make the Snake move in 4 directions properly
+- [x] Making the Snake eat the Food
+- [x] Making the Snake grow longer when it collides with Food
+- [x] Check for collision with edges
+    - [ ] Check for collision with tail
 - [ ] Adding title and frame
 - [ ] Adding sounds

@@ -24,7 +24,6 @@ bool wait(double interval)
 class Snake
 {
 public:
-    // TODO : Use std::vector instead of deque
     std::deque<Vector2> body {
         Vector2{4, 9},
         Vector2{5, 9},
@@ -32,23 +31,33 @@ public:
         Vector2{7, 9},
         Vector2{8, 9}
     };
+
     Vector2 right {1, 0};
     Vector2 left  {-1, 0};
     Vector2 up    {0, -1};
     Vector2 down  {0, 1};
     Vector2 direction = right;
 
+    Vector2 head = body.back();
+    Vector2 tail = body.front();
+
     void Draw()
     {
-        for (unsigned int i = 0; i < body.size(); i++) {
-            DrawRectangle(body[i].x * CellSize, body[i].y * CellSize, CellSize, CellSize, DarkGreen);
+        for (auto it = body.begin(); it != body.end(); ++it) {
+            DrawRectangle(it->x * CellSize, it->y * CellSize, CellSize, CellSize, DarkGreen);
         }
     }
 
     void Update()
     {
         body.pop_front();
-        body.push_back(Vector2Add(body.back(), this->direction));
+        body.push_back(Vector2Add(body.back(), direction));
+        head = body.back();
+    }
+
+    void Grow()
+    {
+        body.push_front(Vector2Add(body.front(), direction));
     }
 };
 
@@ -78,6 +87,11 @@ public:
         DrawTexture(food_texture, position.x * CellSize, position.y * CellSize, WHITE);
     }
 
+    void Update()
+    {
+        position = GenerateRandomPosition();
+    }
+
 };
 
 int main ()
@@ -89,30 +103,46 @@ int main ()
 
     while(!WindowShouldClose()) {
         BeginDrawing();
+        ClearBackground(Green);
         if (wait(0.2)) {
             snake.Update();
         }
-        /*
-         * TODO : 
-         * Don't allow snake to move backward, when going in any direction :
-         * when moving to the right don't allow to move left
-         * when moving to the left don't allow to move right
-         * when moving to the up don't allow to move down
-         * when moving to the down don't allow to move up
-        */
-        if (IsKeyPressed(KEY_K)) { // UP
+        if (IsKeyPressed(KEY_K) && snake.direction.y != 1) { // UP
             snake.direction = snake.up;
         }
-        if (IsKeyPressed(KEY_J)) { // DOWN
+        if (IsKeyPressed(KEY_J) && snake.direction.y != -1) { // DOWN
             snake.direction = snake.down;
         }
-        if (IsKeyPressed(KEY_L)) { // RIGHT
+        if (IsKeyPressed(KEY_L) && snake.direction.x != -1) { // RIGHT
             snake.direction = snake.right;
         }
-        if (IsKeyPressed(KEY_H)) { // LEFT
+        if (IsKeyPressed(KEY_H) && snake.direction.x != 1) { // LEFT
             snake.direction = snake.left;
         }
-        ClearBackground(Green);
+        if (IsKeyPressed(KEY_Q)) {
+            CloseWindow();
+            exit(0);
+        }
+
+        // Detect Collision with food and Grow the snake if so
+        if (Vector2Equals(snake.head, food.position)) {
+            food.Update();
+            food.Draw();
+            snake.Grow();
+        }
+
+        // Detect Collision for wall on right and bottom
+        if (snake.head.x * CellSize >= CellSize * CellCount || snake.head.y * CellSize >= CellSize * CellCount) {
+            CloseWindow();
+            exit(0);
+        }
+
+        // Detect Collision for wall on left and top
+        if (snake.head.x < 0 || snake.head.y < 0) {
+            CloseWindow();
+            exit(0);
+        }
+
         food.Draw();
         snake.Draw();
         EndDrawing();
