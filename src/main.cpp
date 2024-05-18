@@ -1,4 +1,5 @@
 #include <deque>
+#include <iostream>
 #include <raylib.h>
 #include <raymath.h>
 
@@ -17,6 +18,16 @@ bool wait(double interval)
     if (current_time - last_update_time >= interval) {
         last_update_time = current_time;
         return true;
+    }
+    return false;
+}
+
+bool position_in_deque(Vector2 position, std::deque<Vector2> deque)
+{
+    for (auto it = deque.begin(); it != deque.end(); ++it) {
+        if (Vector2Equals(position, *it)) {
+            return true;
+        }
     }
     return false;
 }
@@ -70,19 +81,28 @@ public:
     Vector2 position;
     Texture2D food_texture;
 
-    Food()
+    Food(std::deque<Vector2> snake_body)
     {
         Image image = LoadImage("../assets/food.png");
         food_texture = LoadTextureFromImage(image);
         UnloadImage(image);
-        position = GenerateRandomPosition();
+        position = GenerateRandomPosition(snake_body);
     }
 
-    Vector2 GenerateRandomPosition()
+    Vector2 GenerateRandomCell()
     {
         float x = GetRandomValue(0, CellCount - 1);
         float y = GetRandomValue(0, CellCount - 1);
         return Vector2{x, y};
+    }
+
+    Vector2 GenerateRandomPosition(std::deque<Vector2> deque)
+    {
+        position = GenerateRandomCell();
+        while (position_in_deque(position, deque)) {
+            position = GenerateRandomCell();
+        }
+        return position;
     }
 
     void Draw()
@@ -90,9 +110,23 @@ public:
         DrawTexture(food_texture, position.x * CellSize, position.y * CellSize, WHITE);
     }
 
-    void Update()
+    void Update(std::deque<Vector2> snake_body)
     {
-        position = GenerateRandomPosition();
+        position = GenerateRandomPosition(snake_body);
+    }
+
+};
+
+class Game
+{
+public:
+    Snake snake = Snake();
+    Food food = Food(snake.body);
+
+    void Draw()
+    {
+        snake.Draw();
+        food.Draw();
     }
 
 };
@@ -101,26 +135,26 @@ int main ()
 {
     InitWindow(CellSize * CellCount, CellSize * CellCount, "Snake");
     SetTargetFPS(60);
-    Food food = Food();
-    Snake snake = Snake();
+
+    Game game = Game();
 
     while(!WindowShouldClose()) {
         BeginDrawing();
         ClearBackground(Green);
         if (wait(0.2)) {
-            snake.Update();
+            game.snake.Update();
         }
-        if (IsKeyPressed(KEY_K) && snake.direction.y != 1) { // UP
-            snake.direction = snake.up;
+        if (IsKeyPressed(KEY_K) && game.snake.direction.y != 1) { // UP
+            game.snake.direction = game.snake.up;
         }
-        if (IsKeyPressed(KEY_J) && snake.direction.y != -1) { // DOWN
-            snake.direction = snake.down;
+        if (IsKeyPressed(KEY_J) && game.snake.direction.y != -1) { // DOWN
+            game.snake.direction = game.snake.down;
         }
-        if (IsKeyPressed(KEY_L) && snake.direction.x != -1) { // RIGHT
-            snake.direction = snake.right;
+        if (IsKeyPressed(KEY_L) && game.snake.direction.x != -1) { // RIGHT
+            game.snake.direction = game.snake.right;
         }
-        if (IsKeyPressed(KEY_H) && snake.direction.x != 1) { // LEFT
-            snake.direction = snake.left;
+        if (IsKeyPressed(KEY_H) && game.snake.direction.x != 1) { // LEFT
+            game.snake.direction = game.snake.left;
         }
         if (IsKeyPressed(KEY_Q)) {
             CloseWindow();
@@ -128,26 +162,25 @@ int main ()
         }
 
         // Detect Collision with food and Grow the snake if so
-        if (Vector2Equals(snake.head, food.position)) {
-            food.Update();
-            food.Draw();
-            snake.Grow();
+        if (Vector2Equals(game.snake.head, game.food.position)) {
+            game.food.Update(game.snake.body);
+            game.food.Draw();
+            game.snake.Grow();
         }
 
         // Detect Collision for wall on right and bottom
-        if (snake.head.x * CellSize >= CellSize * CellCount || snake.head.y * CellSize >= CellSize * CellCount) {
+        if (game.snake.head.x * CellSize >= CellSize * CellCount || game.snake.head.y * CellSize >= CellSize * CellCount) {
             CloseWindow();
             exit(0);
         }
 
         // Detect Collision for wall on left and top
-        if (snake.head.x < 0 || snake.head.y < 0) {
+        if (game.snake.head.x < 0 || game.snake.head.y < 0) {
             CloseWindow();
             exit(0);
         }
 
-        food.Draw();
-        snake.Draw();
+        game.Draw();
         EndDrawing();
     }
 
