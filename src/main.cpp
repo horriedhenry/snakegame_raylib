@@ -25,11 +25,11 @@ class Snake
 {
 public:
     std::deque<Vector2> body {
-        Vector2{4, 9},
-        Vector2{5, 9},
-        Vector2{6, 9},
+        Vector2{8, 9},
         Vector2{7, 9},
-        Vector2{8, 9}
+        Vector2{6, 9},
+        Vector2{5, 9},
+        Vector2{4, 9},
     };
 
     Vector2 right {1, 0};
@@ -44,15 +44,18 @@ public:
     void Draw()
     {
         for (auto it = body.begin(); it != body.end(); ++it) {
-            DrawRectangle(it->x * CellSize, it->y * CellSize, CellSize, CellSize, DarkGreen);
+            float x = it->x;
+            float y = it->y;
+            Rectangle segment = Rectangle{x * CellSize, y * CellSize, (float)CellSize, (float)CellSize};
+            DrawRectangleRounded(segment, 0.5, 6, DarkGreen);
         }
     }
 
     void Update()
     {
-        body.pop_front();
-        body.push_back(Vector2Add(body.back(), direction));
-        head = body.back();
+        body.pop_back();
+        body.push_front(Vector2Add(body.front(), direction));
+        head = body.front();
     }
 
     void Grow()
