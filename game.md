@@ -8,6 +8,6 @@
 - [x] Making the Snake eat the Food
 - [x] Making the Snake grow longer when it collides with Food
 - [x] Check for collision with edges
-    - [ ] Check for collision with tail
+    - [x] Check for collision with tail and body
 - [ ] Adding title and frame
 - [ ] Adding sounds

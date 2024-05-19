@@ -1,5 +1,4 @@
 #include <deque>
-#include <iostream>
 #include <raylib.h>
 #include <raymath.h>
 
@@ -36,8 +35,6 @@ class Snake
 {
 public:
     std::deque<Vector2> body {
-        Vector2{8, 9},
-        Vector2{7, 9},
         Vector2{6, 9},
         Vector2{5, 9},
         Vector2{4, 9},
@@ -49,8 +46,8 @@ public:
     Vector2 down  {0, 1};
     Vector2 direction = right;
 
-    Vector2 head = body.back();
-    Vector2 tail = body.front();
+    Vector2 head = body.front();
+    Vector2 tail = body.back();
 
     void Draw()
     {
@@ -72,6 +69,18 @@ public:
     void Grow()
     {
         body.push_front(Vector2Add(body.front(), direction));
+    }
+
+    void reset()
+    {
+        body = {
+            Vector2{6, 9},
+            Vector2{5, 9},
+            Vector2{4, 9},
+        };
+        direction = right;
+        head = body.front();
+        tail = body.back();
     }
 };
 
@@ -122,11 +131,50 @@ class Game
 public:
     Snake snake = Snake();
     Food food = Food(snake.body);
+    bool running = true;
 
     void Draw()
     {
         snake.Draw();
         food.Draw();
+    }
+
+    void GameOver()
+    {
+        snake.reset();
+        food.position = food.GenerateRandomPosition(snake.body);
+        running = false;
+    }
+
+    void CheckCollisionWithBody()
+    {
+        std::deque<Vector2> head_less_body (snake.body.begin() + 1, snake.body.end());
+        if (position_in_deque(snake.body[0], head_less_body)) {
+            GameOver();
+        }
+    }
+
+    void CheckCollisionWithWalls()
+    {
+        // Detect Collision for wall on right and bottom
+        if (snake.head.x * CellSize >= CellSize * CellCount || snake.head.y * CellSize >= CellSize * CellCount) {
+            GameOver();
+        }
+
+        // Detect Collision for wall on left and top
+        if (snake.head.x < 0 || snake.head.y < 0) {
+            GameOver();
+        }
+    }
+
+    void CheckCollisionWithFood()
+    {
+        // Detect Collision with food and Grow the snake if so
+        if (Vector2Equals(snake.head, food.position)) {
+            food.Update(snake.body);
+            food.Draw();
+            snake.Grow();
+        }
     }
 
 };
@@ -142,18 +190,28 @@ int main ()
         BeginDrawing();
         ClearBackground(Green);
         if (wait(0.2)) {
-            game.snake.Update();
+            if (game.running == true) {
+                game.snake.Update();
+                game.CheckCollisionWithBody();
+                game.CheckCollisionWithWalls();
+                game.CheckCollisionWithFood();
+            }
         }
+
         if (IsKeyPressed(KEY_K) && game.snake.direction.y != 1) { // UP
+            game.running = true;
             game.snake.direction = game.snake.up;
         }
         if (IsKeyPressed(KEY_J) && game.snake.direction.y != -1) { // DOWN
+            game.running = true;
             game.snake.direction = game.snake.down;
         }
         if (IsKeyPressed(KEY_L) && game.snake.direction.x != -1) { // RIGHT
+            game.running = true;
             game.snake.direction = game.snake.right;
         }
         if (IsKeyPressed(KEY_H) && game.snake.direction.x != 1) { // LEFT
+            game.running = true;
             game.snake.direction = game.snake.left;
         }
         if (IsKeyPressed(KEY_Q)) {
@@ -161,24 +219,6 @@ int main ()
             exit(0);
         }
 
-        // Detect Collision with food and Grow the snake if so
-        if (Vector2Equals(game.snake.head, game.food.position)) {
-            game.food.Update(game.snake.body);
-            game.food.Draw();
-            game.snake.Grow();
-        }
-
-        // Detect Collision for wall on right and bottom
-        if (game.snake.head.x * CellSize >= CellSize * CellCount || game.snake.head.y * CellSize >= CellSize * CellCount) {
-            CloseWindow();
-            exit(0);
-        }
-
-        // Detect Collision for wall on left and top
-        if (game.snake.head.x < 0 || game.snake.head.y < 0) {
-            CloseWindow();
-            exit(0);
-        }
 
         game.Draw();
         EndDrawing();
