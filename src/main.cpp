@@ -3,8 +3,9 @@
 
 #include <deque>
 
-Color Green{173, 204, 96, 255};
-Color DarkGreen{43, 51, 24, 255};
+Color DarkGrey{40, 40, 40, 255};
+Color Yellow{250, 189, 47, 255};
+Color Orange = {214, 93, 14, 255};
 
 int CellSize{30};
 int CellCount{25};
@@ -59,7 +60,7 @@ class Snake {
             Rectangle segment =
                 Rectangle{offset + (x * CellSize), offset + (y * CellSize),
                           (float)CellSize, (float)CellSize};
-            DrawRectangleRounded(segment, 0.5, 6, DarkGreen);
+            DrawRectangleRounded(segment, 0.5, 6, Yellow);
         }
     }
 
@@ -92,9 +93,9 @@ class Food {
 
     Food(std::deque<Vector2> snake_body)
     {
-        Image image = LoadImage("../assets/food.png");
-        food_texture = LoadTextureFromImage(image);
-        UnloadImage(image);
+        // Image image = LoadImage("../assets/food.png");
+        // food_texture = LoadTextureFromImage(image);
+        // UnloadImage(image);
         position = GenerateRandomPosition(snake_body);
     }
 
@@ -116,8 +117,12 @@ class Food {
 
     void Draw()
     {
-        DrawTexture(food_texture, offset + position.x * CellSize,
-                    offset + position.y * CellSize, WHITE);
+        Rectangle segment =
+            Rectangle{offset + (position.x * CellSize), offset + (position.y * CellSize),
+                      (float)CellSize, (float)CellSize};
+        DrawRectangleRounded(segment, 0.5, 6, Orange);
+        // DrawTexture(food_texture, offset + position.x * CellSize,
+        //             offset + position.y * CellSize, WHITE);
     }
 
     void Update(std::deque<Vector2> snake_body)
@@ -132,19 +137,16 @@ class Game {
     Food food = Food(snake.body);
     bool running = true;
     int score = 0;
-    Sound EatSound;
     Sound WallSound;
 
     Game()
     {
         InitAudioDevice();
-        EatSound = LoadSound("../assets/eat.mp3");
         WallSound = LoadSound("../assets/wall.mp3");
     }
 
     void EndGame()
     {
-        UnloadSound(EatSound);
         UnloadSound(WallSound);
         CloseAudioDevice();
     }
@@ -187,7 +189,6 @@ class Game {
     {
         // Detect Collision with food and Grow the snake if so
         if (Vector2Equals(snake.head, food.position)) {
-            PlaySound(EatSound);
             score++;
             food.Update(snake.body);
             food.Draw();
@@ -210,7 +211,7 @@ int main()
     while (!WindowShouldClose()) {
         BeginDrawing();
 
-        if (wait(0.2)) {
+        if (wait(0.1)) {
             if (game.running == true) {
                 game.snake.Update();
                 game.CheckCollisionWithBody();
@@ -239,11 +240,11 @@ int main()
             CloseWindow();
             exit(0);
         }
-        ClearBackground(Green);
-        DrawRectangleLinesEx(Border, 5, DarkGreen);
-        DrawText("Snake Raylib", offset - 5, 20, 40, DarkGreen);
+        ClearBackground(DarkGrey);
+        DrawRectangleLinesEx(Border, 5, Yellow);
+        DrawText("Snake", offset - 5, 20, 40, Yellow);
         DrawText(TextFormat("Score : %i", game.score), offset - 5,
-                 offset + CellSize * CellCount + 10, 30, DarkGreen);
+                 offset + CellSize * CellCount + 10, 30, Yellow);
         game.Draw();
         EndDrawing();
     }
