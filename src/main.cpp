@@ -1,10 +1,7 @@
-#include <fstream>
-#include <iostream>
 #include <raylib.h>
 #include <raymath.h>
 
 #include <deque>
-#include <string>
 
 Color Green{173, 204, 96, 255};
 Color DarkGreen{43, 51, 24, 255};
