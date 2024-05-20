@@ -1,21 +1,25 @@
+#include <fstream>
+#include <iostream>
 #include <raylib.h>
 #include <raymath.h>
 
 #include <deque>
+#include <string>
 
 Color Green{173, 204, 96, 255};
 Color DarkGreen{43, 51, 24, 255};
 
-int CellSize  = 30;
-int CellCount = 25;
+int CellSize{30};
+int CellCount{25};
+int offset{75};
 
 double last_update_time{0};
 
 // wait for certain amount of time before doing something
 bool wait(double interval)
 {
-    double current_time{
-        GetTime()};  // Get elapsed time in seconds since InitWindow()
+    // Get elapsed time in seconds since InitWindow()
+    double current_time{GetTime()};
     if (current_time - last_update_time >= interval) {
         last_update_time = current_time;
         return true;
@@ -34,7 +38,7 @@ bool position_in_deque(Vector2 position, std::deque<Vector2> deque)
 }
 
 class Snake {
-   public:
+  public:
     std::deque<Vector2> body{
         Vector2{6, 9},
         Vector2{5, 9},
@@ -53,10 +57,11 @@ class Snake {
     void Draw()
     {
         for (auto it = body.begin(); it != body.end(); ++it) {
-            float x           = it->x;
-            float y           = it->y;
-            Rectangle segment = Rectangle{x * CellSize, y * CellSize,
-                                          (float)CellSize, (float)CellSize};
+            float x = it->x;
+            float y = it->y;
+            Rectangle segment =
+                Rectangle{offset + (x * CellSize), offset + (y * CellSize),
+                          (float)CellSize, (float)CellSize};
             DrawRectangleRounded(segment, 0.5, 6, DarkGreen);
         }
     }
@@ -78,19 +83,19 @@ class Snake {
             Vector2{4, 9},
         };
         direction = right;
-        head      = body.front();
-        tail      = body.back();
+        head = body.front();
+        tail = body.back();
     }
 };
 
 class Food {
-   public:
+  public:
     Vector2 position;
     Texture2D food_texture;
 
     Food(std::deque<Vector2> snake_body)
     {
-        Image image  = LoadImage("../assets/food.png");
+        Image image = LoadImage("../assets/food.png");
         food_texture = LoadTextureFromImage(image);
         UnloadImage(image);
         position = GenerateRandomPosition(snake_body);
@@ -114,8 +119,8 @@ class Food {
 
     void Draw()
     {
-        DrawTexture(food_texture, position.x * CellSize, position.y * CellSize,
-                    WHITE);
+        DrawTexture(food_texture, offset + position.x * CellSize,
+                    offset + position.y * CellSize, WHITE);
     }
 
     void Update(std::deque<Vector2> snake_body)
@@ -125,10 +130,27 @@ class Food {
 };
 
 class Game {
-   public:
-    Snake snake  = Snake();
-    Food food    = Food(snake.body);
+  public:
+    Snake snake = Snake();
+    Food food = Food(snake.body);
     bool running = true;
+    int score = 0;
+    Sound EatSound;
+    Sound WallSound;
+
+    Game()
+    {
+        InitAudioDevice();
+        EatSound = LoadSound("../assets/eat.mp3");
+        WallSound = LoadSound("../assets/wall.mp3");
+    }
+
+    void EndGame()
+    {
+        UnloadSound(EatSound);
+        UnloadSound(WallSound);
+        CloseAudioDevice();
+    }
 
     void Draw()
     {
@@ -140,7 +162,8 @@ class Game {
     {
         snake.reset();
         food.position = food.GenerateRandomPosition(snake.body);
-        running       = false;
+        running = false;
+        score = 0;
     }
 
     void CheckCollisionWithBody()
@@ -156,12 +179,9 @@ class Game {
     {
         // Detect Collision for wall on right and bottom
         if (snake.head.x * CellSize >= CellSize * CellCount ||
-            snake.head.y * CellSize >= CellSize * CellCount) {
-            GameOver();
-        }
-
-        // Detect Collision for wall on left and top
-        if (snake.head.x < 0 || snake.head.y < 0) {
+            snake.head.y * CellSize >= CellSize * CellCount ||
+            snake.head.x < 0 || snake.head.y < 0) {
+            PlaySound(WallSound);
             GameOver();
         }
     }
@@ -170,6 +190,8 @@ class Game {
     {
         // Detect Collision with food and Grow the snake if so
         if (Vector2Equals(snake.head, food.position)) {
+            PlaySound(EatSound);
+            score++;
             food.Update(snake.body);
             food.Draw();
             snake.Grow();
@@ -179,14 +201,18 @@ class Game {
 
 int main()
 {
-    InitWindow(CellSize * CellCount, CellSize * CellCount, "Snake");
+    InitWindow((2 * offset) + CellSize * CellCount,
+               (2 * offset) + CellSize * CellCount, "Snake");
     SetTargetFPS(60);
+    Rectangle Border{(float)offset - 5, (float)offset - 5,
+                     (float)CellSize * CellCount + 10,
+                     (float)CellSize * CellCount + 10};
 
     Game game = Game();
 
     while (!WindowShouldClose()) {
         BeginDrawing();
-        ClearBackground(Green);
+
         if (wait(0.2)) {
             if (game.running == true) {
                 game.snake.Update();
@@ -195,30 +221,37 @@ int main()
                 game.CheckCollisionWithFood();
             }
         }
-        if (IsKeyPressed(KEY_K) && game.snake.direction.y != 1) {  // UP
-            game.running         = true;
+        if (IsKeyPressed(KEY_K) && game.snake.direction.y != 1) { // UP
+            game.running = true;
             game.snake.direction = game.snake.up;
         }
-        if (IsKeyPressed(KEY_J) && game.snake.direction.y != -1) {  // DOWN
-            game.running         = true;
+        if (IsKeyPressed(KEY_J) && game.snake.direction.y != -1) { // DOWN
+            game.running = true;
             game.snake.direction = game.snake.down;
         }
-        if (IsKeyPressed(KEY_L) && game.snake.direction.x != -1) {  // RIGHT
-            game.running         = true;
+        if (IsKeyPressed(KEY_L) && game.snake.direction.x != -1) { // RIGHT
+            game.running = true;
             game.snake.direction = game.snake.right;
         }
-        if (IsKeyPressed(KEY_H) && game.snake.direction.x != 1) {  // LEFT
-            game.running         = true;
+        if (IsKeyPressed(KEY_H) && game.snake.direction.x != 1) { // LEFT
+            game.running = true;
             game.snake.direction = game.snake.left;
         }
         if (IsKeyPressed(KEY_Q)) {
+            game.EndGame();
             CloseWindow();
             exit(0);
         }
+        ClearBackground(Green);
+        DrawRectangleLinesEx(Border, 5, DarkGreen);
+        DrawText("Snake Raylib", offset - 5, 20, 40, DarkGreen);
+        DrawText(TextFormat("Score : %i", game.score), offset - 5,
+                 offset + CellSize * CellCount + 10, 30, DarkGreen);
         game.Draw();
         EndDrawing();
     }
 
+    game.EndGame();
     CloseWindow();
     return 0;
 }
