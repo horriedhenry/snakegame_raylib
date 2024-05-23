@@ -1,3 +1,4 @@
+#include <fstream>
 #include <raylib.h>
 #include <raymath.h>
 
@@ -117,9 +118,9 @@ class Food {
 
     void Draw()
     {
-        Rectangle segment =
-            Rectangle{offset + (position.x * CellSize), offset + (position.y * CellSize),
-                      (float)CellSize, (float)CellSize};
+        Rectangle segment = Rectangle{offset + (position.x * CellSize),
+                                      offset + (position.y * CellSize),
+                                      (float)CellSize, (float)CellSize};
         DrawRectangleRounded(segment, 0.5, 6, Orange);
         // DrawTexture(food_texture, offset + position.x * CellSize,
         //             offset + position.y * CellSize, WHITE);
@@ -138,17 +139,20 @@ class Game {
     bool running = true;
     int score = 0;
     Sound WallSound;
+    int high_score;
 
     Game()
     {
         InitAudioDevice();
         WallSound = LoadSound("../assets/wall.mp3");
+        GetHighScore();
     }
 
     void EndGame()
     {
         UnloadSound(WallSound);
         CloseAudioDevice();
+        UpdateHighScore();
     }
 
     void Draw()
@@ -159,6 +163,7 @@ class Game {
 
     void GameOver()
     {
+        UpdateHighScore();
         snake.reset();
         food.position = food.GenerateRandomPosition(snake.body);
         running = false;
@@ -176,7 +181,6 @@ class Game {
 
     void CheckCollisionWithWalls()
     {
-        // Detect Collision for wall on right and bottom
         if (snake.head.x * CellSize >= CellSize * CellCount ||
             snake.head.y * CellSize >= CellSize * CellCount ||
             snake.head.x < 0 || snake.head.y < 0) {
@@ -187,12 +191,49 @@ class Game {
 
     void CheckCollisionWithFood()
     {
-        // Detect Collision with food and Grow the snake if so
         if (Vector2Equals(snake.head, food.position)) {
             score++;
             food.Update(snake.body);
             food.Draw();
             snake.Grow();
+        }
+    }
+
+    void GetHighScore()
+    {
+        std::ifstream file("../state/score");
+        if (file.is_open()) {
+            std::string score;
+            std::getline(file, score);
+            this->high_score = std::stoi(score);
+            file.close();
+        }
+        else {
+            TraceLog(LOG_INFO,
+                     "Cannot Open [../state/score] to get high_score");
+            return;
+        }
+    }
+
+    void SaveScore(int score)
+    {
+        std::ofstream file("../state/score");
+        if (file.is_open()) {
+            file << score;
+            file.close();
+        }
+        else {
+            TraceLog(LOG_INFO,
+                     "Cannot Open [../state/score] to update high_score");
+            return;
+        }
+    }
+
+    void UpdateHighScore()
+    {
+        if (this->score > this->high_score) {
+            this->high_score = score;
+            SaveScore(high_score);
         }
     }
 };
@@ -244,6 +285,9 @@ int main()
         DrawRectangleLinesEx(Border, 5, Yellow);
         DrawText("Snake", offset - 5, 20, 40, Yellow);
         DrawText(TextFormat("Score : %i", game.score), offset - 5,
+                 offset + CellSize * CellCount + 10, 30, Yellow);
+        DrawText(TextFormat("High Score : %i", game.high_score),
+                 offset + CellSize * CellCount - 250,
                  offset + CellSize * CellCount + 10, 30, Yellow);
         game.Draw();
         EndDrawing();
