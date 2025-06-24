@@ -1,6 +1,6 @@
 # Retro SnakeGame
 
-![Gameplay Video](./media/gameplay.mp4)
+[Gameplay](./media/gameplay.mp4)
 
 ## Build Instructions
 
