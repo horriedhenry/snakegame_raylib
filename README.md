@@ -1,6 +1,10 @@
 # Retro SnakeGame
 
-[Gameplay](./media/gameplay.mp4)
+<p align="center">
+
+  <img src="./media/gameplay.gif" alt="Gameplay Video">
+
+</p>
 
 ## Build Instructions
 
