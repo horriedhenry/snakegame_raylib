@@ -53,6 +53,8 @@ class Snake {
     Vector2 head = body.front();
     Vector2 tail = body.back();
 
+    bool addSegment{false};
+
     void Draw()
     {
         for (auto it = body.begin(); it != body.end(); ++it) {
@@ -67,12 +69,16 @@ class Snake {
 
     void Update()
     {
-        body.pop_back();
+
         body.push_front(Vector2Add(body.front(), direction));
+        if (addSegment)
+        {
+            addSegment = false;
+        } else {
+            body.pop_back();
+        }
         head = body.front();
     }
-
-    void Grow() { body.push_front(Vector2Add(body.front(), direction)); }
 
     void reset()
     {
@@ -195,7 +201,7 @@ class Game {
             score++;
             food.Update(snake.body);
             food.Draw();
-            snake.Grow();
+            snake.addSegment = true;
         }
     }
 
@@ -252,7 +258,7 @@ int main()
     while (!WindowShouldClose()) {
         BeginDrawing();
 
-        if (wait(0.1)) {
+        if (wait(0.2)) {
             if (game.running == true) {
                 game.snake.Update();
                 game.CheckCollisionWithBody();
